@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# userhome [-f file] [login]
+
+login="`whoami`"
+file="/etc/passwd"
+
+while [ -n "$1" ]
+do
+    case $1 in
+    "-f")   shift
+            file=$1
+            ;;
+    *)      login=$1
+    esac
+    shift
+done
+
+if [[ !(-e "$file") ]]
+then
+    echo "$file does not exist" >&2
+    exit 2
+fi
+
+s=":"
+lgm="$login$s"
+rl=""
+rl="`grep "^$lgm" $file`"
+
+
+if [ "$rl" == "" ]
+then
+    echo "user $login hasn't been found" >&2
+    exit 1
+fi
+
+hm=${rl%:*}
+hm=${hm##*:}
+echo $hm
+
+exit 0

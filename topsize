@@ -1,0 +1,131 @@
+#!/bin/bash
+
+print_help()
+{
+    echo "HELP!"
+    exit 0
+}
+
+correct_max_num()
+{
+    if [[ "$1" =~ ^[1-9][0-9]*$ ]]
+    then
+        return 1
+    fi
+    return 0
+}
+
+correct_min_size()
+{
+    if [[ "$1" =~ ^[1-9][0-9]*[bcwkMG]$ ]]
+    then
+        return 1
+    fi
+    return 0
+}
+
+n=0
+if_h=0
+minsz="1c"
+dir="."
+prev_s=0
+count=0
+separator=0
+
+for opt in "$@"
+do
+    if [[ $separator -eq 0 ]]
+    then
+        if [[ "$prev_s" -eq 1 ]]
+        then
+            prev_s=0
+            minsz=$opt
+            correct_min_size "$minsz"
+            if [[ $? -eq 0 ]]
+            then
+                echo "invalid minsize value: ${minsz}. skip" >&2
+                minsz="1c"
+            fi
+            continue
+        fi
+
+        case $opt in
+        "--help")
+                print_help
+                exit 0
+                ;;
+        "-h")   if_h=1
+                continue
+                ;;
+        "-s")   prev_s=1
+                continue
+                ;;
+        "--")   separator=1
+                continue
+                ;;
+        -*)     n=${opt:1}
+                correct_max_num "$n"
+                if [[ $? -eq 0 ]]
+                then
+                    echo "unknown parameter -${n}, skip" >&2
+                    n=0
+                fi
+                continue
+                ;;
+        esac
+    fi
+
+    if [[ !(-d "$opt") ]]
+    then
+        echo "directory ${opt} doesn't exist!" >&2
+        continue
+    fi
+
+    # Дописываю ./ перед названиями директорий,
+    # начинающихся с -, т.к. find видит их
+    # опции
+    if [[ "$opt" =~ ^[-].* ]]
+    then
+        opt="./"$opt
+    fi
+
+    directs[${count}]="$opt"
+    count=`expr $count + 1`
+done
+
+if [[ $count -eq 0 ]]
+then
+    directs[0]="."
+fi
+
+minsz="+${minsz}"
+# echo "IAO: ${if_atleast_one}"
+# echo "minsz: ${minsz}"
+# echo "n: ${n}"
+# echo "ifh: ${if_h}"
+# echo "dirs: ${directs[@]}"
+
+if [[ $n -eq 0 ]]
+then
+    find "${directs[@]}" -type f -size $minsz 2>/dev/null -printf "%s\t%p\n" | sort -n -r | cut -f2 |
+    while read file
+    do
+        if [[ $if_h -eq 0 ]]
+        then
+            echo -e $(du -b "$file" | cut -f1) "\t" "$file"
+        else
+            echo -e $(du -b -h "$file" | cut -f1) "\t" "$file"
+        fi
+    done
+else
+    find "${directs[@]}" -type f -size $minsz 2>/dev/null -printf "%s\t%p\n" | sort -n -r | head -n "$n" | cut -f2 |
+    while read file
+    do
+        if [[ $if_h -eq 0 ]]
+        then
+            echo -e $(du -b "$file" | cut -f1) "\t" "$file"
+        else
+            echo -e $(du -b -h "$file" | cut -f1) "\t" "$file"
+        fi
+    done
+fi
