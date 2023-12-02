@@ -37,6 +37,7 @@ Whereas:
 The script should insert the given suffix before the file extention
 (e.g. "sfx": "a" -> "asfx", "a.txt" -> "asfx.txt", "a.b.c" -> a.bsfx.c)
 > inssfx \[suffix\] \[-h\] \[-d\] \[-v\] \[fname\] \[--] \[fname...\]
+
 The first non-optional argument is a suffix. All of the next ones are filenames of the file
 Options:
 - -h = print help
